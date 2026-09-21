@@ -1,0 +1,81 @@
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+DATA_URL = (
+    "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_daily.csv"
+)
+
+st.set_page_config(page_title="영화 데이터 그래프 도감 1 - 시간", layout="wide")
+
+
+# ─────────────────────────────────────────────
+# 데이터 불러오기
+# ─────────────────────────────────────────────
+@st.cache_data
+def load_data() -> pd.DataFrame:
+    df = pd.read_csv(DATA_URL)
+    # 20240101 같은 여덟 자리 숫자 → 진짜 날짜(datetime)
+    df["날짜"] = pd.to_datetime(df["날짜"].astype(str), format="%Y%m%d")
+    return df
+
+
+def show_insight(text: str) -> None:
+    """그래프 바로 아래에 '이 그래프로 알 수 있는 것' 한 문장을 보여 줍니다."""
+    st.info(f"**이 그래프로 알 수 있는 것** · {text}")
+
+
+df = load_data()
+
+st.title("영화 데이터 그래프 도감 1 - 시간")
+st.caption("일별 박스오피스 10위권 기록 (1년치)")
+
+
+# ─────────────────────────────────────────────
+# 구역 1: 영화별 일관객 변화
+# ─────────────────────────────────────────────
+def section_daily_audience() -> None:
+    st.header("1. 영화별 일관객 변화")
+
+    # 누적관객이 큰 영화가 위로 오도록 정렬
+    movie_order = (
+        df.groupby("영화명")["누적관객"].max().sort_values(ascending=False).index.tolist()
+    )
+    movie = st.selectbox("영화를 골라 보세요", movie_order, key="sec1_movie")
+
+    movie_df = df[df["영화명"] == movie].sort_values("날짜")
+
+    fig = px.line(
+        movie_df,
+        x="날짜",
+        y="일관객",
+        markers=True,
+        title=f"{movie} · 날짜별 일관객",
+    )
+    fig.update_traces(
+        hovertemplate="날짜: %{x|%Y-%m-%d}<br>일관객: %{y:,}명<extra></extra>"
+    )
+    fig.update_layout(xaxis_title="날짜", yaxis_title="일관객(명)")
+    st.plotly_chart(fig, use_container_width=True)
+
+    # 아래 문구를 원하는 한 문장으로 바꿔 주세요.
+    show_insight("여기에 이 그래프로 알 수 있는 내용을 한 문장으로 적어 주세요.")
+
+
+# ─────────────────────────────────────────────
+# 구역 2 이후: 그래프를 추가할 때는 아래처럼 함수를 만들고
+# 맨 아래 '구역 실행' 부분에 호출을 한 줄 추가하면 됩니다.
+# ─────────────────────────────────────────────
+# def section_next_graph() -> None:
+#     st.header("2. 새 그래프 제목")
+#     ...
+#     show_insight("한 문장")
+
+
+# ─────────────────────────────────────────────
+# 구역 실행 (구역 사이에는 구분선)
+# ─────────────────────────────────────────────
+section_daily_audience()
+st.divider()
+# section_next_graph()
+# st.divider()
