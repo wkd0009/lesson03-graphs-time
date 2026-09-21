@@ -137,11 +137,49 @@ def section_daily_total() -> None:
 
 
 # ─────────────────────────────────────────────
-# 구역 4 이후: 그래프를 추가할 때는 아래처럼 함수를 만들고
+# 구역 4: 영화별 일관객 합계 TOP 10
+# ─────────────────────────────────────────────
+def section_top10_bar() -> None:
+    st.header("4. 영화별 일관객 합계 TOP 10")
+
+    # 영화별 일관객 합계와 10위권에 든 날수
+    summary = (
+        df.groupby("영화명")
+        .agg(일관객합계=("일관객", "sum"), 십위권날수=("날짜", "nunique"))
+        .reset_index()
+        .nlargest(10, "일관객합계")
+    )
+
+    fig = px.bar(
+        summary,
+        x="일관객합계",
+        y="영화명",
+        orientation="h",
+        custom_data=["십위권날수"],
+        title="영화별 일관객 합계 TOP 10",
+    )
+    fig.update_traces(
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "일관객 합계: %{x:,}명<br>"
+            "10위권에 든 날수: %{customdata[0]}일<extra></extra>"
+        )
+    )
+    # 관객이 많은 영화가 위로 오도록 정렬
+    fig.update_yaxes(categoryorder="total ascending")
+    fig.update_layout(xaxis_title="일관객 합계(명)", yaxis_title="")
+    st.plotly_chart(fig, use_container_width=True)
+
+    # 아래 문구를 원하는 한 문장으로 바꿔 주세요.
+    show_insight("여기에 이 그래프로 알 수 있는 내용을 한 문장으로 적어 주세요.")
+
+
+# ─────────────────────────────────────────────
+# 구역 5 이후: 그래프를 추가할 때는 아래처럼 함수를 만들고
 # 맨 아래 '구역 실행' 부분에 호출을 한 줄 추가하면 됩니다.
 # ─────────────────────────────────────────────
 # def section_next_graph() -> None:
-#     st.header("4. 새 그래프 제목")
+#     st.header("5. 새 그래프 제목")
 #     ...
 #     show_insight("한 문장")
 
@@ -154,6 +192,8 @@ st.divider()
 section_top5_compare()
 st.divider()
 section_daily_total()
+st.divider()
+section_top10_bar()
 st.divider()
 # section_next_graph()
 # st.divider()
